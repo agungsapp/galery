@@ -1,0 +1,6 @@
+{
+  "name": "Sanca Developer",
+  "description": "Simple Gallery Swipe Organizer. Swipe left to delete, swipe right to keep.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
