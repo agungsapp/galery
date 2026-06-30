@@ -26,6 +26,7 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.detectDragGestures
+import androidx.compose.foundation.gestures.detectHorizontalDragGestures
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -873,20 +874,16 @@ fun SwipeCardItem(
     onSwipeRight: () -> Unit
 ) {
     var offsetX by remember { mutableStateOf(0f) }
-    var offsetY by remember { mutableStateOf(0f) }
     val scope = rememberCoroutineScope()
 
     val animOffsetX = remember { Animatable(0f) }
-    val animOffsetY = remember { Animatable(0f) }
 
     LaunchedEffect(offsetX) {
         animOffsetX.snapTo(offsetX)
     }
-    LaunchedEffect(offsetY) {
-        animOffsetY.snapTo(offsetY)
-    }
 
-    val swipeThreshold = 320f
+    // Lower threshold for a super smooth and fast, sensitive swipe trigger
+    val swipeThreshold = 140f
 
     Card(
         shape = RoundedCornerShape(32.dp),
@@ -895,7 +892,7 @@ fun SwipeCardItem(
             .fillMaxWidth()
             .aspectRatio(4f / 5f)
             .pointerInput(image.id) {
-                detectDragGestures(
+                detectHorizontalDragGestures(
                     onDragEnd = {
                         if (offsetX < -swipeThreshold) {
                             scope.launch {
@@ -909,23 +906,20 @@ fun SwipeCardItem(
                             }
                         } else {
                             scope.launch {
-                                launch { animOffsetX.animateTo(0f, spring(dampingRatio = Spring.DampingRatioMediumBouncy)) }
-                                launch { animOffsetY.animateTo(0f, spring(dampingRatio = Spring.DampingRatioMediumBouncy)) }
+                                animOffsetX.animateTo(0f, spring(dampingRatio = Spring.DampingRatioMediumBouncy))
                                 offsetX = 0f
-                                offsetY = 0f
                             }
                         }
                     },
-                    onDrag = { change, dragAmount ->
+                    onHorizontalDrag = { change, dragAmount ->
                         change.consume()
-                        offsetX += dragAmount.x
-                        offsetY += dragAmount.y
+                        offsetX += dragAmount
                     }
                 )
             }
             .graphicsLayer {
                 translationX = animOffsetX.value
-                translationY = animOffsetY.value
+                translationY = 0f
                 rotationZ = animOffsetX.value * 0.035f
             }
             .border(1.dp, BorderColor.copy(alpha = 0.5f), RoundedCornerShape(32.dp))
@@ -939,8 +933,8 @@ fun SwipeCardItem(
                 modifier = Modifier.fillMaxSize()
             )
 
-            // Drag indicator badges
-            if (offsetX < -80f) {
+            // Drag indicator badges (appear immediately on slight swipe)
+            if (offsetX < -40f) {
                 Box(
                     modifier = Modifier
                         .align(Alignment.TopStart)
@@ -958,7 +952,7 @@ fun SwipeCardItem(
                         letterSpacing = 1.sp
                     )
                 }
-            } else if (offsetX > 80f) {
+            } else if (offsetX > 40f) {
                 Box(
                     modifier = Modifier
                         .align(Alignment.TopEnd)
